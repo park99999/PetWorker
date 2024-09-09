@@ -274,12 +274,6 @@ fun ChatMessageItem(
         }
         if(!isCurrentUser) {
             Column(modifier = Modifier.padding(start = 4.dp, top = 8.dp)) {
-                Text(
-                    text = if (isRead) "읽음" else "안 읽음",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Color.Gray,
-                    fontSize = 10.sp,
-                )
                 message.createAt?.let {
                     Text(
                         text = extractTimeFromTimestamp(it),
@@ -384,7 +378,7 @@ fun ChatInputField(chatViewModel: ChatViewModel) {
 
 fun isMessageRead(message: ChatMessage, unreadChatIndexData: UnreadChatIndexData): Boolean {
     return if (message.chatIndex != null) {
-        message.chatIndex <= unreadChatIndexData.lastChatIndex!!
+        message.chatIndex > unreadChatIndexData.lastChatIndex!!
     } else {
         true
     }

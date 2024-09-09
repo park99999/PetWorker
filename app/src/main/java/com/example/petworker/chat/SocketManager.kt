@@ -1,5 +1,7 @@
 package com.example.petworker.chat
 
+import android.annotation.SuppressLint
+import androidx.navigation.NavController
 import com.example.petworker.data.ChatMessage
 import com.example.petworker.viewModel.ChatViewModel
 import io.socket.client.IO
@@ -8,15 +10,16 @@ import org.json.JSONObject
 import java.lang.ref.WeakReference
 import java.net.URISyntaxException
 
+@SuppressLint("StaticFieldLeak")
 object SocketManager {
 
     private lateinit var mSocket: Socket
     private const val authToken =
         "eyJ1aWQiOjQsInR5cGUiOiJvd25lciIsInByb2ZpbGVJbWciOiI0LTFkOGE5MCIsIl90b2tlbkNyZWF0ZUF0IjoxNzIzMzc4NjQ1NDMyfQ==.e9af902a6fda4de4374ee8bc7393def746bd873b88efc7f6e657cdfd1e0788fb"
-
+    var navController: NavController? = null
     // Weak reference to avoid memory leaks
     private var chatViewModelRef: WeakReference<ChatViewModel>? = null
-
+    private var chatRoomNumber : Int? =0
     fun setChatViewModel(chatViewModel: ChatViewModel) {
         chatViewModelRef = WeakReference(chatViewModel)
     }
@@ -26,7 +29,10 @@ object SocketManager {
             println("Socket is already connected")
             return
         }
-
+        val currentRoute = navController?.currentBackStackEntry?.destination?.route
+        if (currentRoute != null) {
+            println("현재 화면: $currentRoute")
+        }
         try {
             val opts = IO.Options()
             opts.path = "/socket"
@@ -69,13 +75,14 @@ object SocketManager {
         }
     }
 
-    fun createChatRoom(chatId: Int) {
+    fun setChatRoom(chatId: Int) {
         if (!::mSocket.isInitialized || !mSocket.connected()) {
             println("소켓 연결 x")
             return
         }
         val data = JSONObject()
         data.put("chatId", chatId)
+        chatRoomNumber = chatId
         println("enterChatRoom")
         mSocket.emit("SetChatRoomMessage", data)
     }
@@ -109,23 +116,26 @@ object SocketManager {
             content = content,
             createAt = createAt
         )
+        //톡방화면에 있으면 바로 읽음 처리
+        val currentRoute = navController?.currentBackStackEntry?.destination?.route
+        val chatRoomId = navController?.currentBackStackEntry?.arguments?.getString("chatId")
+        if (currentRoute == "chatHistory/{chatId}" && chatRoomId == chatRoomNumber.toString()) {
+            chatViewModelRef?.get()?.receiveMessage(chatMessage)
+            mSocket.emit("ChatReadMessage", JSONObject().apply {
+                put("chatIndex", index)
+            })
+        }
+        else{
+            //톡방화면에 없으면 알림 처리
+            print("성공?")
+        }
 
-        chatViewModelRef?.get()?.receiveMessage(chatMessage)
-
-        mSocket.emit("ChatReadMessage", JSONObject().apply {
-            put("chatIndex", index)
-        })
     }
 
     private fun handleChatReadEvent(event: JSONObject) {
         val senderId = event.getInt("sender")
         val chatIndex = event.getInt("index")
-
-        if (senderId != getUserId()) {
-            println("Message read by other: $event")
-            // 읽음 마커 표시 로직
-            // markAsRead(chatIndex)
-        }
+        chatViewModelRef?.get()?.markAsRead(chatIndex)
     }
 
     private fun handleError(args: Array<Any>) {
@@ -167,6 +177,10 @@ object SocketManager {
     }
 
     fun sendTextMessage(isText : Boolean, message: Any) {
+        val currentRoute = navController?.currentBackStackEntry?.destination?.route
+        if (currentRoute != null) {
+            println("현재 화면: $currentRoute")
+        }
         if (!::mSocket.isInitialized || !mSocket.connected()) {
             println("소켓 연결 x")
             return

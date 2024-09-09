@@ -15,9 +15,9 @@ interface ChatHistoryDAO {
     @Delete
     suspend fun deleteItem(chatHistory: ChatHistory)
 
-    @Query("SELECT MAX(chatIndex) FROM chatHistory where chatRoomId = :chatRoomId")
+    @Query("SELECT MAX(chatIndex) FROM chatHistory where chatRoomId = :chatRoomId ")
     suspend fun getChatLastIndex(chatRoomId : Long): Int?
-    @Query("select * from chatHistory where chatRoomId = :chatRoomId")
+    @Query("select * from chatHistory where chatRoomId = :chatRoomId order by chatIndex desc")
     suspend fun getAllChatHistory(chatRoomId : Long) : List<ChatHistory>
 }
 

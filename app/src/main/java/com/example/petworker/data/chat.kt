@@ -15,7 +15,7 @@ data class UnreadChatIndexResponse(
 data class UnreadChatIndexData(
     val untilReadIndex: Int ? =0,
     val otherSideReadIndex: Int?=0,
-    val lastChatIndex: Int?=0
+    var lastChatIndex: Int?=0
 )
 data class ChatMessage(
     val chatIndex : Long?=null,

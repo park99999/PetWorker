@@ -62,6 +62,7 @@ class MainActivity : ComponentActivity() {
 //                    //SocketManager().startSocket()
 //                    ButtonChatSetMessage(viewModel)
                     val navController = rememberNavController()
+                    SocketManager.navController = navController
                     val viewModelFactory = ChatViewModelFactory()
                     val chatViewModel = ViewModelProvider(this,viewModelFactory)[ChatViewModel::class.java]
                     SocketManager.setChatViewModel(chatViewModel)
@@ -142,9 +143,9 @@ fun ButtonChatSetMessage(chatViewModel: ChatViewModel) {
     Column {
         // 버튼을 누르면 채팅 방에 들어가고 채팅 내역을 불러옴
         Button(onClick = {
-            SocketManager.enterChatRoom(1)
+            //SocketManager.enterChatRoom(1)
 
-            //hatViewModel.getChatHistory(1)
+            //chatViewModel.getChatHistory(1)
 
         }) {
             Text(text = "Load Chat History")

@@ -3,7 +3,6 @@ package com.example.petworker.viewModel
 import android.content.Context
 import android.database.Cursor
 import android.net.Uri
-import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.example.petworker.ApiInterface
@@ -95,24 +94,28 @@ class ChatViewModel:ViewModel() {
                                             currentList + charHistory
                                         }
                                         for (chat in charHistory){
-                                            val newChat = ChatHistory(
-                                                chatRoomId = chatId,
-                                                chatIndex = chat.chatIndex!!,
-                                                sender = chat.sender!!,
-                                                type = chat.type!!,
-                                                content = chat.content!!,
-                                                createAt = chat.createAt!!
-                                            )
-                                            CoroutineScope(Dispatchers.IO).launch {
-                                                db!!.chatHistoryDao().insertItem(newChat)
+                                            if(chatIndex == null){
+                                                chatIndex = 0
+                                            }
+                                            if(chatIndex!! < chat.chatIndex!!) {
+                                                val newChat = ChatHistory(
+                                                    chatRoomId = chatId,
+                                                    chatIndex = chat.chatIndex,
+                                                    sender = chat.sender!!,
+                                                    type = chat.type!!,
+                                                    content = chat.content!!,
+                                                    createAt = chat.createAt!!
+                                                )
+                                                CoroutineScope(Dispatchers.IO).launch {
+                                                    db!!.chatHistoryDao().insertItem(newChat)
+                                                }
                                             }
                                         }
                                     }
-
                                     //읽음 처리
                                     SocketManager.chatReadMessage(cursor)
                                 } else {
-                                    // RoomDb에서 채팅들 끄내오기
+                                    //
                                 }
                             }
 
@@ -122,7 +125,12 @@ class ChatViewModel:ViewModel() {
                         })
                     } else {
                         CoroutineScope(Dispatchers.IO).launch {
-                            print(db!!.chatHistoryDao().getAllChatHistory(chatId).toString())
+                            val chatList = db!!.chatHistoryDao().getAllChatHistory(chatId)
+                            for (chat in chatList){
+                                _chatHistoryList.update {
+                                    it+listOf(ChatMessage(chat.chatIndex,chat.sender,chat.type,chat.content,chat.createAt))
+                                }
+                            }
                         }
                     }
                 } else {
@@ -136,9 +144,9 @@ class ChatViewModel:ViewModel() {
     }
     fun joinRoom(chatId: Int) {
         _chatHistoryList.update { emptyList() }
-//        SocketManager.apply {
-//            createChatRoom(chatId)
-//        }
+        SocketManager.apply {
+            setChatRoom(chatId)
+        }
     }
 
     fun sendMessage(message: Any, isText: Boolean) {
@@ -147,13 +155,9 @@ class ChatViewModel:ViewModel() {
 
     fun receiveMessage(message: ChatMessage) {
         _chatHistoryList.update { listOf(message) + it }
-        _chatHistoryList.value.forEach { chatMessage ->
-            println("Message: ${chatMessage.content}")
-        }
     }
 
     fun getImgTokenAndSendImg(uris: List<*>,context: Context) {
-
         for(uri in uris){
             val filePart = prepareFilePart("file", uri as Uri, context)
             val call = service.uploadImage(filePart!!)
@@ -227,16 +231,9 @@ class ChatViewModel:ViewModel() {
         return null
     }
 
-    private fun isExternalStorageDocument(uri: Uri): Boolean {
-        return "com.android.externalstorage.documents" == uri.authority
+    fun markAsRead(chatIndex: Int) {
+        _chatLastIndex.value.lastChatIndex = chatIndex
     }
 
-    private fun isDownloadsDocument(uri: Uri): Boolean {
-        return "com.android.providers.downloads.documents" == uri.authority
-    }
-
-    private fun isMediaDocument(uri: Uri): Boolean {
-        return "com.android.providers.media.documents" == uri.authority
-    }
 
 }

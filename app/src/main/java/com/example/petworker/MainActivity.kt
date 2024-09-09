@@ -144,7 +144,7 @@ fun ButtonChatSetMessage(chatViewModel: ChatViewModel) {
         Button(onClick = {
             SocketManager.enterChatRoom(1)
 
-            chatViewModel.getChatHistory(1)
+            //hatViewModel.getChatHistory(1)
 
         }) {
             Text(text = "Load Chat History")

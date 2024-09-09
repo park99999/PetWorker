@@ -1,6 +1,8 @@
 plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.jetbrainsKotlinAndroid)
+    id("com.google.devtools.ksp")
+    kotlin("kapt")
 }
 
 android {
@@ -51,6 +53,13 @@ android {
 
 dependencies {
 
+    implementation(libs.androidx.room.runtime.v261)
+    implementation(libs.androidx.room.ktx)
+    annotationProcessor(libs.androidx.room.compiler.v261)
+    // To use Kotlin Symbol Processing (KSP)
+    //ksp("androidx.room:room-compiler:2.5.0")
+    //ksp ("androidx.room:room-compiler:$2.6.1")
+    kapt(libs.androidx.room.compiler.v261)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -72,6 +81,7 @@ dependencies {
     implementation(libs.balloon)
     implementation(libs.balloon.compose)
     implementation(libs.material3)
+
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

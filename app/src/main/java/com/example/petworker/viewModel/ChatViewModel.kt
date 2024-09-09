@@ -3,10 +3,14 @@ package com.example.petworker.viewModel
 import android.content.Context
 import android.database.Cursor
 import android.net.Uri
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.example.petworker.ApiInterface
+import com.example.petworker.ChatHistoryDatabase
+import com.example.petworker.UserManager
 import com.example.petworker.chat.SocketManager
+import com.example.petworker.chat.data.ChatHistory
 import com.example.petworker.data.ApiRequest
 import com.example.petworker.data.ChatHistoryResponse
 import com.example.petworker.data.ChatMessage
@@ -15,10 +19,13 @@ import com.example.petworker.data.FileUploadResponse
 import com.example.petworker.data.UnreadChatIndexData
 import com.example.petworker.data.UnreadChatIndexResponse
 import com.example.petworker.getRetrofit
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
@@ -35,21 +42,25 @@ class ChatViewModelFactory : ViewModelProvider.Factory{
     }
 }
 class ChatViewModel:ViewModel() {
-    private val authToken =
-        "eyJ1aWQiOjQsInR5cGUiOiJvd25lciIsInByb2ZpbGVJbWciOiI0LTFkOGE5MCIsIl90b2tlbkNyZWF0ZUF0IjoxNzIzMzc4NjQ1NDMyfQ==.e9af902a6fda4de4374ee8bc7393def746bd873b88efc7f6e657cdfd1e0788fb"
+    private val authToken = UserManager.userToken!!
+
     private val _chatLastIndex = MutableStateFlow(UnreadChatIndexData())
     val chatLastIndex: StateFlow<UnreadChatIndexData> = _chatLastIndex.asStateFlow()
-
     private val _chatHistoryList = MutableStateFlow<List<ChatMessage>>(emptyList())
     val chatHistoryList: StateFlow<List<ChatMessage>> = _chatHistoryList.asStateFlow()
 
+    var chatIndex : Int? = 0
     private val service: ApiInterface = getRetrofit().create(ApiInterface::class.java)
-    fun getChatHistory(chatId: Int) {
+    fun getChatHistory(chatId: Long,context: Context) {
         val unreadChatIndexRequest = ApiRequest(
             operation = "GetUnreadChatIndex",
             param = mapOf("chatId" to chatId)
         )
-
+        val db = ChatHistoryDatabase.getInstance(context)
+        CoroutineScope(Dispatchers.IO).launch {
+            chatIndex = db!!.chatHistoryDao().getChatLastIndex(chatId)
+        }
+        //chatHistory APi 호출
         val callUnreadChatIndex = service.getUnreadChatIndex(authToken, listOf(unreadChatIndexRequest))
         callUnreadChatIndex.enqueue(object : Callback<List<UnreadChatIndexResponse>> {
             override fun onResponse(call: Call<List<UnreadChatIndexResponse>>, response: Response<List<UnreadChatIndexResponse>>) {
@@ -63,7 +74,7 @@ class ChatViewModel:ViewModel() {
                             value = indexData
                         }
                     }
-                    if (cursor != null) {
+                    if (cursor != null && cursor != chatIndex) {
                         val chatHistoryRequest = ApiRequest(
                             operation = "GetChatHistory",
                             param = mapOf("chatId" to chatId, "cursor" to cursor)
@@ -83,12 +94,25 @@ class ChatViewModel:ViewModel() {
                                         _chatHistoryList.update { currentList ->
                                             currentList + charHistory
                                         }
+                                        for (chat in charHistory){
+                                            val newChat = ChatHistory(
+                                                chatRoomId = chatId,
+                                                chatIndex = chat.chatIndex!!,
+                                                sender = chat.sender!!,
+                                                type = chat.type!!,
+                                                content = chat.content!!,
+                                                createAt = chat.createAt!!
+                                            )
+                                            CoroutineScope(Dispatchers.IO).launch {
+                                                db!!.chatHistoryDao().insertItem(newChat)
+                                            }
+                                        }
                                     }
 
                                     //읽음 처리
                                     SocketManager.chatReadMessage(cursor)
                                 } else {
-                                    // 오류 처리
+                                    // RoomDb에서 채팅들 끄내오기
                                 }
                             }
 
@@ -97,13 +121,14 @@ class ChatViewModel:ViewModel() {
                             }
                         })
                     } else {
-                        // cursor가 null인 경우 처리
+                        CoroutineScope(Dispatchers.IO).launch {
+                            print(db!!.chatHistoryDao().getAllChatHistory(chatId).toString())
+                        }
                     }
                 } else {
                     // GetUnreadChatIndex API 오류 처리
                 }
             }
-
             override fun onFailure(call: Call<List<UnreadChatIndexResponse>>, t: Throwable) {
                 // 네트워크 오류 처리
             }
@@ -111,9 +136,9 @@ class ChatViewModel:ViewModel() {
     }
     fun joinRoom(chatId: Int) {
         _chatHistoryList.update { emptyList() }
-        SocketManager.apply {
-            enterChatRoom(chatId)
-        }
+//        SocketManager.apply {
+//            createChatRoom(chatId)
+//        }
     }
 
     fun sendMessage(message: Any, isText: Boolean) {

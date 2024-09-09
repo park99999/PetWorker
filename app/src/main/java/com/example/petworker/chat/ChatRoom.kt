@@ -122,10 +122,10 @@ fun ChatRoomItem(chatRoom: ChatRoom, onClick: () -> Unit) {
 fun ChatHistoryScreen(chatViewModel: ChatViewModel, chatId: Int) {
     val chatHistory by chatViewModel.chatHistoryList.collectAsState()
     val unreadChatIndexData by chatViewModel.chatLastIndex.collectAsState()
-
+    val context = LocalContext.current
     LaunchedEffect(chatId) {
         chatViewModel.joinRoom(chatId)
-        chatViewModel.getChatHistory(chatId)
+        chatViewModel.getChatHistory(chatId.toLong(),context)
     }
     Column(modifier = Modifier.fillMaxSize(), ) {
         Row(modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {

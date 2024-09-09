@@ -69,7 +69,7 @@ object SocketManager {
         }
     }
 
-    fun enterChatRoom(chatId: Int) {
+    fun createChatRoom(chatId: Int) {
         if (!::mSocket.isInitialized || !mSocket.connected()) {
             println("소켓 연결 x")
             return

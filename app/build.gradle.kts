@@ -3,14 +3,15 @@ plugins {
     alias(libs.plugins.jetbrainsKotlinAndroid)
     id("com.google.devtools.ksp")
     kotlin("kapt")
+    alias(libs.plugins.googleGmsGoogleServices)
 }
 
 android {
-    namespace = "com.example.petworker"
+    namespace = "com.petpath.walk"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.example.petworker"
+        applicationId = "com.petpath.walk"
         minSdk = 30
         targetSdk = 34
         versionCode = 1
@@ -55,6 +56,7 @@ dependencies {
 
     implementation(libs.androidx.room.runtime.v261)
     implementation(libs.androidx.room.ktx)
+    implementation(libs.firebase.inappmessaging.display)
     annotationProcessor(libs.androidx.room.compiler.v261)
     // To use Kotlin Symbol Processing (KSP)
     //ksp("androidx.room:room-compiler:2.5.0")

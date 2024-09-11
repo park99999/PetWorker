@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "369627471590",
+    "project_id": "pet-path-8e361",
+    "storage_bucket": "pet-path-8e361.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:369627471590:android:72200393e6e2297c552527",
+        "android_client_info": {
+          "package_name": "com.petpath.walk"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBKvVzTI1a2zVSeLej218gHxuFhfqjn_oE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

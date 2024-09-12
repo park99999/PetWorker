@@ -18,13 +18,3 @@ fun getRetrofit(): Retrofit {
         .client(httpClient)
         .build()
 }
-fun getSocketRetrofit(): Retrofit {
-    val logging = HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BODY }
-    val httpClient = OkHttpClient.Builder().addInterceptor(logging).build()
-    return Retrofit.Builder()
-        .baseUrl(SOCKET_URL)
-        .addConverterFactory(GsonConverterFactory.create())
-        .client(httpClient)
-        .build()
-
-}

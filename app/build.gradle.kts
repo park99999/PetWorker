@@ -57,6 +57,7 @@ dependencies {
     implementation(libs.androidx.room.runtime.v261)
     implementation(libs.androidx.room.ktx)
     implementation(libs.firebase.inappmessaging.display)
+    implementation(libs.firebase.messaging.ktx)
     annotationProcessor(libs.androidx.room.compiler.v261)
     // To use Kotlin Symbol Processing (KSP)
     //ksp("androidx.room:room-compiler:2.5.0")

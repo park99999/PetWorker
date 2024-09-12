@@ -4,6 +4,7 @@ import com.petpath.walk.data.ApiRequest
 import com.petpath.walk.data.CertUserResponse
 import com.petpath.walk.data.ChatHistoryResponse
 import com.petpath.walk.data.FileUploadResponse
+import com.petpath.walk.data.SetPushTokenResponse
 import com.petpath.walk.data.UnreadChatIndexResponse
 import okhttp3.MultipartBody
 import retrofit2.Call
@@ -41,4 +42,10 @@ interface ApiInterface {
     fun uploadImage(
         @Part file: MultipartBody.Part
     ): Call<FileUploadResponse>
+
+    @POST("SetPushToken")
+    fun setPushToken(
+        @Header("auth") authToken: String,
+        @Body apiRequest: List<ApiRequest>
+    ): Call<List<SetPushTokenResponse>>
 }

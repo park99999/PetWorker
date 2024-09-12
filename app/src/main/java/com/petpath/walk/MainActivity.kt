@@ -1,33 +1,30 @@
 package com.petpath.walk
 
 import android.annotation.SuppressLint
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.ContentValues.TAG
 import android.content.Context
+import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
-import androidx.compose.material3.Divider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.content.ContextCompat.getSystemService
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.compose.rememberNavController
@@ -41,6 +38,20 @@ import com.petpath.walk.viewModel.UserViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
+import com.google.android.gms.tasks.OnCompleteListener
+import com.google.firebase.messaging.FirebaseMessaging
+import com.petpath.walk.chat.data.ChatHistory
+import com.petpath.walk.data.ApiRequest
+import com.petpath.walk.data.ChatHistoryResponse
+import com.petpath.walk.data.SetPushTokenResponse
+import com.petpath.walk.data.UnreadChatIndexResponse
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -53,9 +64,22 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     SocketManager.connectSocket()
+                    FirebaseMessaging.getInstance().token.addOnCompleteListener(OnCompleteListener { task ->
+                        if (!task.isSuccessful) {
+                            Log.w(TAG, "Fetching FCM registration token failed", task.exception)
+                            return@OnCompleteListener
+                        }
+
+                        // Get new FCM registration token
+                        val token = task.result
+                        uploadToken(token)
+                        // Log and toast
+                        Log.d(TAG, token)
+                        Toast.makeText(baseContext, token, Toast.LENGTH_SHORT).show()
+                    })
 ////                    val viewModelFactory = UserViewModelFactory()
 ////                    val viewModel = ViewModelProvider(this,viewModelFactory)[UserViewModel::class.java]
-////                    val context = LocalContext.current
+//                   val context = LocalContext.current
 ////                    Greeting(context,viewModel)
 //                    //LocationPermissionScreen(this)
 
@@ -69,14 +93,39 @@ class MainActivity : ComponentActivity() {
                     AppNavHost(navController, chatViewModel)
                 }
             }
-            MyApp()
         }
     }
-}
-@Composable
-fun MyApp() {
-    PetWorkerTheme {
 
+    companion object {
+        fun uploadToken(token: String) {
+            val service: ApiInterface = getRetrofit().create(ApiInterface::class.java)
+            val setTokenRequest = ApiRequest(
+                operation = "SetPushToken",
+                param = mapOf("token" to token)
+            )
+            UserManager.userToken?.let<String, Call<List<SetPushTokenResponse>>> {
+                service.setPushToken(
+                    it,
+                    listOf<ApiRequest>(setTokenRequest)
+                )
+            }?.enqueue(object : Callback<List<SetPushTokenResponse>> {
+                override fun onResponse(
+                    call: Call<List<SetPushTokenResponse>>,
+                    response: Response<List<SetPushTokenResponse>>
+                ) {
+                    if (response.isSuccessful) {
+                        val tokenResponse =
+                            response.body()?.get(0)
+                    } else {
+                        // GetUnreadChatIndex API 오류 처리
+                    }
+                }
+
+                override fun onFailure(call: Call<List<SetPushTokenResponse>>, t: Throwable) {
+                    // 네트워크 오류 처리
+                }
+            })
+        }
     }
 }
 
@@ -137,42 +186,4 @@ fun Greeting(context: Context, userViewModel: UserViewModel) {
             webView.loadUrl("https://petpath.ritchko.com/certification/request")
         }
     )
-}
-@Composable
-fun ButtonChatSetMessage(chatViewModel: ChatViewModel) {
-    Column {
-        // 버튼을 누르면 채팅 방에 들어가고 채팅 내역을 불러옴
-        Button(onClick = {
-            //SocketManager.enterChatRoom(1)
-
-            //chatViewModel.getChatHistory(1)
-
-        }) {
-            Text(text = "Load Chat History")
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // 채팅 내역을 화면에 표시
-        val chatHistory by chatViewModel.chatHistoryList.collectAsState()
-
-        LazyColumn {
-            items(chatHistory) { chatMessage ->
-                ChatMessageItem(chatMessage)
-            }
-        }
-    }
-}
-
-@Composable
-fun ChatMessageItem(chatMessage: ChatMessage) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp)
-    ) {
-        Text(text = "Sender: ${chatMessage.sender}")
-        chatMessage.content?.let { Text(text = it) }
-        Divider()
-    }
 }

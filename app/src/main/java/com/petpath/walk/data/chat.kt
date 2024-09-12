@@ -5,7 +5,11 @@ data class FileUploadResponse(
     val message: String,
     val data: String
 )
-
+data class SetPushTokenResponse(
+    val response: Int,
+    val message: String,
+    val data: Any?
+)
 data class UnreadChatIndexResponse(
     val response: Int,
     val message: String,

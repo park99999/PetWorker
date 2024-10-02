@@ -5,6 +5,7 @@ import com.petpath.walk.data.CertUserResponse
 import com.petpath.walk.data.ChatHistoryResponse
 import com.petpath.walk.data.FileUploadResponse
 import com.petpath.walk.data.SetPushTokenResponse
+import com.petpath.walk.data.SignUpResponse
 import com.petpath.walk.data.UnreadChatIndexResponse
 import okhttp3.MultipartBody
 import retrofit2.Call
@@ -20,9 +21,13 @@ interface ApiInterface {
         @Header("auth") authToken: String,
         @Body apiRequest: List<ApiRequest>
     ): Call<List<Any>>
-    @POST("GetCertInfo")
+
+    @POST("SignUp")
+    fun signUp(
+        @Body apiRequest: List<ApiRequest>
+    ) : Call<List<SignUpResponse>>
+    @POST("GetCertResult")
     fun getUserInfo(
-        @Header("auth") authToken: String,
         @Body apiRequest: List<ApiRequest>
     ) : Call<List<CertUserResponse>>
 

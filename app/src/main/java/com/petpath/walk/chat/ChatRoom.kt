@@ -355,6 +355,7 @@ fun ChatInputField(chatViewModel: ChatViewModel) {
                                 chatViewModel.showTempImg(selectedImages)
                             }
                             else{
+                                //chatViewModel.showTempText(message)
                                 chatViewModel.sendMessage(message, true)
                             }
                             message = ""
@@ -366,6 +367,7 @@ fun ChatInputField(chatViewModel: ChatViewModel) {
                                     chatViewModel.showTempImg(selectedImages)
                                 }
                                 else{
+                                    //chatViewModel.showTempText(message)
                                     chatViewModel.sendMessage(message, true)
                                 }
                                 message = ""

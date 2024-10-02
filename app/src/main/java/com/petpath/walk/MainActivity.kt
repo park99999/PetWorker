@@ -1,11 +1,8 @@
 package com.petpath.walk
 
 import android.annotation.SuppressLint
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.content.ContentValues.TAG
 import android.content.Context
-import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.webkit.WebView
@@ -13,7 +10,8 @@ import android.webkit.WebViewClient
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.annotation.RequiresApi
+import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
@@ -24,12 +22,12 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.content.ContextCompat.getSystemService
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.compose.rememberNavController
 import com.petpath.walk.chat.SocketManager
-import com.petpath.walk.data.ChatMessage
 import com.petpath.walk.gps.GPSData
 import com.petpath.walk.theme.PetWorkerTheme
 import com.petpath.walk.viewModel.ChatViewModel
@@ -40,20 +38,16 @@ import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.firebase.messaging.FirebaseMessaging
-import com.petpath.walk.chat.data.ChatHistory
 import com.petpath.walk.data.ApiRequest
-import com.petpath.walk.data.ChatHistoryResponse
 import com.petpath.walk.data.SetPushTokenResponse
-import com.petpath.walk.data.UnreadChatIndexResponse
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
+import com.petpath.walk.viewModel.KeyboardVisibilityViewModel
+import com.petpath.walk.viewModel.UserViewModelFactory
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
 class MainActivity : ComponentActivity() {
+    private val keyboardVisibilityViewModel: KeyboardVisibilityViewModel by viewModels()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -63,6 +57,11 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
+                    ViewCompat.setOnApplyWindowInsetsListener(findViewById(android.R.id.content)) { _, insets ->
+                        val isKeyboardVisible = insets.isVisible(WindowInsetsCompat.Type.ime())
+                        keyboardVisibilityViewModel.updateKeyboardVisibility(isKeyboardVisible)
+                        insets
+                    }
                     SocketManager.connectSocket()
                     FirebaseMessaging.getInstance().token.addOnCompleteListener(OnCompleteListener { task ->
                         if (!task.isSuccessful) {
@@ -77,10 +76,9 @@ class MainActivity : ComponentActivity() {
                         Log.d(TAG, token)
                         Toast.makeText(baseContext, token, Toast.LENGTH_SHORT).show()
                     })
-////                    val viewModelFactory = UserViewModelFactory()
-////                    val viewModel = ViewModelProvider(this,viewModelFactory)[UserViewModel::class.java]
-//                   val context = LocalContext.current
-////                    Greeting(context,viewModel)
+                    val userViewModelFactory = UserViewModelFactory()
+                    val userViewModel = ViewModelProvider(this,userViewModelFactory)[UserViewModel::class.java]
+                    val context = LocalContext.current
 //                    //LocationPermissionScreen(this)
 
 //                    //SocketManager().startSocket()
@@ -90,7 +88,7 @@ class MainActivity : ComponentActivity() {
                     val viewModelFactory = ChatViewModelFactory()
                     val chatViewModel = ViewModelProvider(this,viewModelFactory)[ChatViewModel::class.java]
                     SocketManager.setChatViewModel(chatViewModel)
-                    AppNavHost(navController, chatViewModel)
+                    AppNavHost(navController, chatViewModel,keyboardVisibilityViewModel,context,userViewModel)
                 }
             }
         }
@@ -168,22 +166,4 @@ fun StartLocationServiceButton(mainActivity: MainActivity) {
 }
 
 
-@SuppressLint("SetJavaScriptEnabled")
-@Composable
-fun Greeting(context: Context, userViewModel: UserViewModel) {
-    AndroidView(
-        modifier = Modifier.fillMaxSize(),
-        factory = { context ->
-            WebView(context).apply {
-                webViewClient = WebViewClient()
-                settings.javaScriptEnabled = true
-                settings.builtInZoomControls = true
-                settings.defaultTextEncodingName = "utf-8"
-            }
-        },
-        update = { webView ->
-            webView.addJavascriptInterface(WebAppInterface(context,userViewModel),"Certification")
-            webView.loadUrl("https://petpath.ritchko.com/certification/request")
-        }
-    )
-}
+

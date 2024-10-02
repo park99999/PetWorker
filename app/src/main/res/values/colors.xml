@@ -11,5 +11,26 @@
     <color name="chat_mine">#FFF4B7</color>
     <color name="chat_subTitle">#3D3D3D</color>
     <color name="chat_subTitle_bg">#FAE1FA</color>
+    <color name="secondary300">#FDD3D0</color>
+    <color name="secondary600">#CFF7D3</color>
+    <color name="primary100">#FFF7CE</color>
+    <color name="gray04">#C1C6CA</color>
+    <color name="gray500">#6C757D</color>
+    <color name="neutral07">#9C9C9C</color>
+    <color name="neutral06">#C8C8C8</color>
+    <color name="neutral04">#F2F2F2</color>
+    <color name="neutral10">#434343</color>
+    <color name="gray600">#495057</color>
+    <color name="neutral11">#3D3D3D</color>
+    <color name="neutral03">#F6F6F6</color>
+    <color name="primary500">#FFE662</color>
+    <color name="component500">#949494</color>
+    <color name="primary">#FFCC00</color>
+    <color name="transparent">#00000000</color>
+    <color name="texttrue">#14AE5C</color>
+    <color name="textfalse">#EC221F</color>
+    <color name="texterror">#E8B931</color>
+
+
 
 </resources>

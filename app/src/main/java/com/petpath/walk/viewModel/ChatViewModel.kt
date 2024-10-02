@@ -257,5 +257,12 @@ class ChatViewModel:ViewModel() {
 
     }
 
+    fun showTempText(message: String) {
+            val newChat = ChatMessage(_chatLastIndex.value.lastChatIndex?.toLong()?.plus(1L),4,"tempText",message,null)
+            _chatHistoryList.update {
+                listOf(newChat)+it
+            }
+    }
+
 
 }
